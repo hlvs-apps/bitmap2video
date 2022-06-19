@@ -35,3 +35,29 @@ dependencies {
 repositories {
     mavenCentral()
 }
+
+
+apply from: '../maven-publish-helper.gradle'
+
+publishing {
+    publications {
+        release(MavenPublication) {
+            // Specify own groupId as package name of your library,
+            // otherwise it would just use project's name (=name of the root directory) by default.
+            groupId 'com.homesoft.bitmap2video'
+            artifactId = 'bitmap2video'
+
+            // Specify custom artifactId if needed,
+            // otherwise it would use module's name by default.
+            //artifactId 'custom-artifact'
+
+            // You can specify custom version,
+            // otherwise it would use version from `android { defaultConfig { ... } }` by default.
+            //version = '1.0'
+        }
+        debug(MavenPublication){
+            groupId 'com.homesoft.bitmap2video'
+            artifactId = 'bitmap2video-debug'
+        }
+    }
+}

@@ -4,7 +4,10 @@ import android.media.MediaCodec
 import android.media.MediaExtractor
 import android.media.MediaFormat
 import android.media.MediaMuxer
+import android.os.Build
+import android.os.ParcelFileDescriptor
 import android.util.Log
+import androidx.annotation.RequiresApi
 import java.nio.ByteBuffer
 import java.util.concurrent.TimeUnit
 
@@ -24,17 +27,37 @@ import java.util.concurrent.TimeUnit
  * limitations under the License.
  */
 
-class Mp4FrameMuxer(path: String, private val fps: Float) : FrameMuxer {
+class Mp4FrameMuxer(private val muxer: MediaMuxer, private val fps: Float) : FrameMuxer {
+
+    constructor(fileOrParcelFileDescriptor: FileOrParcelFileDescriptor, fps: Float) : this(forceOpenMediaMuxer(fileOrParcelFileDescriptor),fps){
+        parcelFileDescriptor=fileOrParcelFileDescriptor.parcelFileDescriptor
+    }
+    constructor(path: String, fps: Float): this(MediaMuxer(path, MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4),fps)
+
     companion object {
         private val TAG: String = Mp4FrameMuxer::class.java.simpleName
+        fun forceOpenMediaMuxer(fileOrParcelFileDescriptor: FileOrParcelFileDescriptor): MediaMuxer =
+                openMediaMuxer(fileOrParcelFileDescriptor)
+                        ?: throw IllegalStateException(
+                                "You didn't initialise your FileOrParcelFileDescriptor correctly!" +
+                                        " Only Android Versions over VersionCode.O can manage ParcelFile" +
+                                        "Descriptors for MediaMuxers!")
+        fun openMediaMuxer(fileOrParcelFileDescriptor: FileOrParcelFileDescriptor): MediaMuxer? =
+                if(fileOrParcelFileDescriptor.isParcelFileDescriptor){
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+                        fileOrParcelFileDescriptor.parcelFileDescriptor?.let { openMediaMuxer(it) }
+                    else null
+                }else MediaMuxer(fileOrParcelFileDescriptor.absolutePath,MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4)
+        @RequiresApi(Build.VERSION_CODES.O)
+        fun openMediaMuxer(parcelFileDescriptor: ParcelFileDescriptor): MediaMuxer =
+                MediaMuxer(parcelFileDescriptor.fileDescriptor,MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4)
     }
+
+    private var parcelFileDescriptor:ParcelFileDescriptor?=null
 
     private val frameUsec: Long = run {
         (TimeUnit.SECONDS.toMicros(1L) / fps).toLong()
     }
-
-    private val muxer: MediaMuxer = MediaMuxer(path, MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4)
-
     private var started = false
     private var videoTrackIndex = 0
     private var audioTrackIndex = 0
@@ -52,7 +75,7 @@ class Mp4FrameMuxer(path: String, private val fps: Float) : FrameMuxer {
         videoTrackIndex = muxer.addTrack(videoFormat)
         audioFormat?.run {
             audioTrackIndex = muxer.addTrack(audioFormat)
-            Log.e("Audio format: %s", audioFormat.toString())
+            Log.d("Audio format: %s", audioFormat.toString())
         }
         Log.d("Video format: %s", videoFormat.toString())
         muxer.start()
@@ -75,6 +98,7 @@ class Mp4FrameMuxer(path: String, private val fps: Float) : FrameMuxer {
 
     override fun release() {
         muxer.stop()
+        parcelFileDescriptor?.close()
         muxer.release()
     }
 

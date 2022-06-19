@@ -11,6 +11,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import java.io.File
 import java.io.IOException
+import java.lang.RuntimeException
 
 /*
  * Copyright (C) 2020 Israel Flores
@@ -28,7 +29,7 @@ import java.io.IOException
  * limitations under the License.
  */
 
-class Muxer(private val context: Context, private val file: File) {
+class Muxer(private val context: Context, private val file: FileOrParcelFileDescriptor) {
     constructor(context: Context, config: MuxerConfig) : this(context, config.file) {
         muxerConfig = config
     }
@@ -51,6 +52,55 @@ class Muxer(private val context: Context, private val file: File) {
     }
 
     fun getMuxerConfig() = muxerConfig
+
+    private var frameBuilder: FrameBuilder?=null
+
+    fun prepareMuxingFrameByFrame(@RawRes audioTrack: Int? = null): MuxingResult{
+        Log.d(TAG, "Generating video")
+        this.frameBuilder = FrameBuilder(context, muxerConfig, audioTrack)
+
+        try {
+            this.frameBuilder?.start()
+        } catch (e: IOException) {
+            Log.e(TAG, "Start Encoder Failed")
+            e.printStackTrace()
+            muxingCompletionListener?.onVideoError(e)
+            return MuxingError("Start encoder failed", e)
+        }
+        return MuxingPending()
+    }
+
+    /**
+     * Mux a image into the Mp4
+     * You have to call prepareMuxingFrameByFrameFist, or a RuntimeException will be thrown
+     */
+    fun muxFrame(image :Any){
+        if (this.frameBuilder?.createFrame(image) == null){
+            throw RuntimeException("An Exception occurred or you haven't called Muxer#prepareMuxingFrameByFrame first!")
+        }
+    }
+
+    fun endMuxingFrameByFrame():MuxingResult{
+        if (frameBuilder==null){
+            return MuxingError("frameBuilder == null", RuntimeException("An Exception Occurred or you haven't called Muxer#prepareMuxingFrameByFrame first!"))
+        }
+        // Release the video codec so we can mux in the audio frames separately
+        frameBuilder?.releaseVideoCodec()
+
+        // Add audio
+        frameBuilder?.muxAudioFrames()
+
+        // Release everything
+        frameBuilder?.releaseAudioExtractor()
+        frameBuilder?.releaseMuxer()
+        frameBuilder=null
+
+        muxingCompletionListener?.onVideoSuccessful(file)
+        return MuxingSuccess(file)
+    }
+
+
+
 
     /**
      * List containing images in any of the following formats:
