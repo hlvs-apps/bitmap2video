@@ -1,7 +1,6 @@
 package com.homesoft.encoder
 
 import android.media.MediaFormat
-import android.net.Uri
 import android.os.Build
 import android.os.ParcelFileDescriptor
 import androidx.annotation.RequiresApi
@@ -23,17 +22,51 @@ import java.io.File
  * limitations under the License.
  */
 
-data class MuxerConfig @JvmOverloads constructor(
+open class MuxerConfig @JvmOverloads constructor(
         var file: FileOrParcelFileDescriptor,
         var videoWidth: Int = 320,
         var videoHeight: Int = 240,
+        var mimeType: String = MediaFormat.MIMETYPE_VIDEO_AVC,
         var framesPerImage: Int = 1,
         var framesPerSecond: Float = 10F,
         var bitrate: Int = 1500000,
-        var iFrameInterval: Int = 10,
-        var mimeType: String = MediaFormat.MIMETYPE_VIDEO_AVC,
-        var frameMuxer: FrameMuxer = Mp4FrameMuxer(file, framesPerSecond)
+        var frameMuxer: FrameMuxer = Mp4FrameMuxer(file, framesPerSecond),
+        var iFrameInterval: Int = 10
 ){
+    @JvmOverloads constructor(
+            file: File,
+            videoWidth: Int = 320,
+            videoHeight: Int = 240,
+            mimeType: String = MediaFormat.MIMETYPE_VIDEO_AVC,
+            framesPerImage: Int = 1,
+            framesPerSecond: Float = 10F,
+            bitrate: Int = 1500000,
+            frameMuxer: FrameMuxer = Mp4FrameMuxer(file.absolutePath, framesPerSecond),
+            iFrameInterval: Int = 10
+    ) : this(FileOrParcelFileDescriptor(file),
+            videoWidth,
+            videoHeight,
+            mimeType, framesPerImage, framesPerSecond, bitrate, frameMuxer, iFrameInterval)
+}
+
+/**
+ * Subclass of [MuxerConfig] that makes it easier to use in Java by rearranging constructor parameters.
+ * Contains nothing but Constructors.
+ *
+ */
+class MuxerJavaConfiguration:MuxerConfig{
+    @JvmOverloads constructor(
+            file: FileOrParcelFileDescriptor,
+            videoWidth: Int = 320,
+            videoHeight: Int = 240,
+            framesPerImage: Int = 1,
+            framesPerSecond: Float = 10F,
+            bitrate: Int = 1500000,
+            iFrameInterval: Int = 10,
+            mimeType: String = MediaFormat.MIMETYPE_VIDEO_AVC,
+            frameMuxer: FrameMuxer = Mp4FrameMuxer(file, framesPerSecond)
+    ):super(file, videoWidth,
+            videoHeight,mimeType,framesPerImage,framesPerSecond,bitrate,frameMuxer,iFrameInterval)
     @JvmOverloads constructor(
             file: File,
             videoWidth: Int = 320,
@@ -44,16 +77,8 @@ data class MuxerConfig @JvmOverloads constructor(
             iFrameInterval: Int = 10,
             mimeType: String = MediaFormat.MIMETYPE_VIDEO_AVC,
             frameMuxer: FrameMuxer = Mp4FrameMuxer(file.absolutePath, framesPerSecond)
-    ) : this(file = file as FileOrParcelFileDescriptor,
-            videoWidth = videoWidth,
-            videoHeight = videoHeight,
-            mimeType = mimeType,
-            framesPerImage = framesPerImage,
-            framesPerSecond = framesPerSecond,
-            bitrate = bitrate,
-            frameMuxer = frameMuxer,
-            iFrameInterval = iFrameInterval)
-}
+    ):super(file, videoWidth,
+            videoHeight,mimeType,framesPerImage,framesPerSecond,bitrate,frameMuxer,iFrameInterval)}
 
 interface MuxingCompletionListener {
     fun onVideoSuccessful(file: FileOrParcelFileDescriptor)
@@ -86,8 +111,8 @@ class MuxingPending:MuxingResult
 class FileOrParcelFileDescriptor : File {
     constructor(s:String): super(s){}
     constructor(file:File): super(file.path)
-    @RequiresApi(Build.VERSION_CODES.O) constructor(uri:ParcelFileDescriptor): super(uri.toString()){
-        this.parcelFileDescriptor=uri
+    @RequiresApi(Build.VERSION_CODES.O) constructor(parcelFileDescriptor:ParcelFileDescriptor): super(parcelFileDescriptor.toString()){
+        this.parcelFileDescriptor=parcelFileDescriptor
         this.isParcelFileDescriptor=true
     }
     var isParcelFileDescriptor:Boolean=false

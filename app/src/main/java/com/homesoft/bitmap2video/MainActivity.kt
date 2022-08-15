@@ -110,16 +110,18 @@ class MainActivity : AppCompatActivity() {
             muxerConfig = MuxerConfig(this, 600, 600, mimeType, 3, 1F, 1500000)
             val muxer = Muxer(this@MainActivity, muxerConfig!!)
 
-            createVideo(muxer) // using callbacks
+            if(async.isChecked)
+                createVideo(muxer) // using callbacks
             // or
-            createVideoAsync(muxer) // using co-routines
+            if(corutines.isChecked)
+                createVideoAsync(muxer) // using co-routines
         }
     }
 
     // Callback-style approach
     private fun createVideo(muxer: Muxer) {
         muxer.setOnMuxingCompletedListener(object : MuxingCompletionListener {
-            override fun onVideoSuccessful(file: File) {
+            override fun onVideoSuccessful(file: FileOrParcelFileDescriptor) {
                 Log.d(TAG, "Video muxed - file path: ${file.absolutePath}")
                 onMuxerCompleted()
             }

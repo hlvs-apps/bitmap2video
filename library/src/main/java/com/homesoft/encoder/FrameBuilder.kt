@@ -150,7 +150,7 @@ class FrameBuilder(
             if (VERBOSE) Log.d(TAG, "sending EOS to encoder")
             mediaCodec.signalEndOfInputStream()
         }
-        var encoderOutputBuffers: Array<ByteBuffer?>? = mediaCodec.getOutputBuffers()
+        //var encoderOutputBuffers: Array<ByteBuffer?>? = mediaCodec.getOutputBuffers()
         while (true) {
             val encoderStatus: Int = mediaCodec.dequeueOutputBuffer(bufferInfo, TIMEOUT_USEC
                     .toLong())
@@ -161,9 +161,6 @@ class FrameBuilder(
                 } else {
                     if (VERBOSE) Log.d(TAG, "no output available, spinning to await EOS")
                 }
-            } else if (encoderStatus == MediaCodec.INFO_OUTPUT_BUFFERS_CHANGED) {
-                // not expected for an encoder
-                encoderOutputBuffers = mediaCodec.getOutputBuffers()
             } else if (encoderStatus == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED) {
                 // should happen before receiving buffers, and should only happen once
                 if (frameMuxer.isStarted()) {
@@ -178,7 +175,7 @@ class FrameBuilder(
                 Log.wtf(TAG, "unexpected result from encoder.dequeueOutputBuffer: $encoderStatus")
                 // let's ignore it
             } else {
-                val encodedData = encoderOutputBuffers?.get(encoderStatus)
+                val encodedData = mediaCodec.getOutputBuffer(encoderStatus)
                         ?: throw RuntimeException("encoderOutputBuffer  $encoderStatus was null")
                 if (bufferInfo.flags and MediaCodec.BUFFER_FLAG_CODEC_CONFIG != 0) {
                     // The codec config data was pulled out and fed to the muxer when we got

@@ -5,4 +5,6 @@
     <string name="make_it">Make It!</string>
     <string name="play_it">Play It!</string>
     <string name="share_it">Share it!</string>
+    <string name="co_routines">co-routines</string>
+    <string name="callbacks">callbacks</string>
 </resources>

@@ -7,23 +7,43 @@
     tools:context="MainActivity">
 
     <RadioGroup
-        android:id="@+id/codec"
+        android:id="@+id/method"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        >
+        android:orientation="horizontal">
+
         <RadioButton
-            android:id="@+id/avc"
-            android:text="@string/avc"
+            android:id="@+id/corutines"
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
             android:checked="true"
-            />
+            android:text="@string/co_routines" />
+
+        <RadioButton
+            android:id="@+id/async"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:text="@string/callbacks" />
+    </RadioGroup>
+
+    <RadioGroup
+        android:id="@+id/codec"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <RadioButton
+            android:id="@+id/avc"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:checked="true"
+            android:text="@string/avc" />
+
         <RadioButton
             android:id="@+id/hevc"
-            android:text="@string/hevc"
             android:layout_width="wrap_content"
-            android:layout_height="match_parent"/>
+            android:layout_height="match_parent"
+            android:text="@string/hevc" />
     </RadioGroup>
 
     <LinearLayout

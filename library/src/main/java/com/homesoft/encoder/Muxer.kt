@@ -72,7 +72,11 @@ class Muxer(private val context: Context, private val file: FileOrParcelFileDesc
 
     /**
      * Mux a image into the Mp4
-     * You have to call prepareMuxingFrameByFrameFist, or a RuntimeException will be thrown
+     *
+     * You have to call [Muxer.prepareMuxingFrameByFrame] first, or a RuntimeException will be thrown
+     *
+     * Image must be one of the following formats:
+     * [Bitmap] @RawRes Int [Canvas]
      */
     fun muxFrame(image :Any){
         if (this.frameBuilder?.createFrame(image) == null){
