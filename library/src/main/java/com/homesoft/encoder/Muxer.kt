@@ -55,6 +55,7 @@ class Muxer(private val context: Context, private val file: FileOrParcelFileDesc
 
     private var frameBuilder: FrameBuilder?=null
 
+    @JvmOverloads
     fun prepareMuxingFrameByFrame(@RawRes audioTrack: Int? = null): MuxingResult{
         Log.d(TAG, "Generating video")
         this.frameBuilder = FrameBuilder(context, muxerConfig, audioTrack)
@@ -84,7 +85,8 @@ class Muxer(private val context: Context, private val file: FileOrParcelFileDesc
         }
     }
 
-    fun endMuxingFrameByFrame():MuxingResult{
+    @JvmOverloads
+    fun endMuxingFrameByFrame(beforeRelease:Runnable?=null):MuxingResult{
         if (frameBuilder==null){
             return MuxingError("frameBuilder == null", RuntimeException("An Exception Occurred or you haven't called Muxer#prepareMuxingFrameByFrame first!"))
         }
@@ -93,6 +95,8 @@ class Muxer(private val context: Context, private val file: FileOrParcelFileDesc
 
         // Add audio
         frameBuilder?.muxAudioFrames()
+
+        beforeRelease?.run()
 
         // Release everything
         frameBuilder?.releaseAudioExtractor()
@@ -110,6 +114,7 @@ class Muxer(private val context: Context, private val file: FileOrParcelFileDesc
      * List containing images in any of the following formats:
      * [Bitmap] [@DrawRes Int] [Canvas]
      */
+    @JvmOverloads
     fun mux(imageList: List<Any>,
             @RawRes audioTrack: Int? = null): MuxingResult {
         // Returns on a callback a finished video
@@ -143,6 +148,7 @@ class Muxer(private val context: Context, private val file: FileOrParcelFileDesc
         return MuxingSuccess(file)
     }
 
+    @JvmOverloads
     suspend fun muxAsync(imageList: List<Any>, @RawRes audioTrack: Int? = null): MuxingResult {
         return mux(imageList, audioTrack)
     }

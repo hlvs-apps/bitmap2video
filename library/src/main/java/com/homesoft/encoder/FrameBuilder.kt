@@ -261,4 +261,12 @@ class FrameBuilder(
         frameMuxer.release()
     }
 
+    /**
+     * Allows to mux own audio to final video,
+     * tracks have to be added before [FrameBuilder.start] is called
+     */
+    fun getMediaMuxer():MediaMuxer{
+        return frameMuxer.getMediaMuxer()
+    }
+
 }

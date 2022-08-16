@@ -105,4 +105,8 @@ class Mp4FrameMuxer(private val muxer: MediaMuxer, private val fps: Float) : Fra
     override fun getVideoTime(): Long {
         return finalVideoTime
     }
+
+    override fun getMediaMuxer(): MediaMuxer {
+        return muxer
+    }
 }
